@@ -605,3 +605,6 @@ Dockerfile 采用多阶段构建，优化镜像体积：
 docker build -t superbizagent .
 docker run -p 8000:8000 superbizagent
 ```
+<img width="3023" height="1714" alt="image" src="https://github.com/user-attachments/assets/41317efd-5fc1-497a-a75b-b5069cacf628" />
+<img width="3023" height="1708" alt="image" src="https://github.com/user-attachments/assets/dd442ab5-7b86-49fd-9267-681a9547c357" />
+<img width="3023" height="1713" alt="image" src="https://github.com/user-attachments/assets/ecee3168-8146-4c35-b390-72a30dd522cf" />
