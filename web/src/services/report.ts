@@ -16,6 +16,12 @@ interface ReportListResponse {
     title: string
     type: string
     status: string
+    summary: string
+    event_count: number
+    critical_count: number
+    high_count: number
+    generated_by: string
+    error_msg: string
     created_at: string
   }>
   total: number
@@ -52,10 +58,12 @@ export const reportService = {
   },
 
   // 获取报告列表
-  async list(page = 1, pageSize = 20): Promise<PaginatedResponse<Report>> {
-    const res = await api.get<ApiResponse<ReportListResponse>>('/report', {
-      params: { page, page_size: pageSize },
-    })
+  async list(page = 1, pageSize = 20, type?: string): Promise<PaginatedResponse<Report>> {
+    const params: Record<string, unknown> = { page, page_size: pageSize }
+    if (type && type !== 'all') {
+      params.type = type
+    }
+    const res = await api.get<ApiResponse<ReportListResponse>>('/report', { params })
     const data = res.data.data
 
     const list: Report[] = (data.list || []).map(item => ({
@@ -66,12 +74,14 @@ export const reportService = {
       start_time: '',
       end_time: '',
       content: '',
+      summary: item.summary || '',
       event_ids: '',
       subscription_ids: '',
-      event_count: 0,
-      critical_count: 0,
-      high_count: 0,
-      generated_by: 'manual',
+      event_count: item.event_count || 0,
+      critical_count: item.critical_count || 0,
+      high_count: item.high_count || 0,
+      generated_by: (item.generated_by || 'manual') as Report['generated_by'],
+      error_msg: item.error_msg || '',
       created_at: item.created_at,
       updated_at: item.created_at,
     }))
@@ -93,6 +103,13 @@ export const reportService = {
       status: string
       content: string
       summary: string
+      event_count: number
+      critical_count: number
+      high_count: number
+      start_time: string
+      end_time: string
+      generated_by: string
+      error_msg: string
       created_at: string
     }>>(`/report/${id}`)
     const d = res.data.data
@@ -101,16 +118,17 @@ export const reportService = {
       title: d.title,
       type: d.type as Report['type'],
       status: d.status as Report['status'],
-      start_time: '',
-      end_time: '',
+      start_time: d.start_time || '',
+      end_time: d.end_time || '',
       content: d.content,
-      summary: d.summary,
+      summary: d.summary || '',
       event_ids: '',
       subscription_ids: '',
-      event_count: 0,
-      critical_count: 0,
-      high_count: 0,
-      generated_by: 'manual',
+      event_count: d.event_count || 0,
+      critical_count: d.critical_count || 0,
+      high_count: d.high_count || 0,
+      generated_by: (d.generated_by || 'manual') as Report['generated_by'],
+      error_msg: d.error_msg || '',
       created_at: d.created_at,
       updated_at: d.created_at,
     }

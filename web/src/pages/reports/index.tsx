@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Search,
   FileText,
@@ -20,10 +20,17 @@ import toast from 'react-hot-toast'
 const reportTypeConfig: Record<string, { label: string; class: string }> = {
   daily: { label: '日报', class: 'tag-primary' },
   weekly: { label: '周报', class: 'tag-success' },
-  monthly: { label: '月报', class: 'bg-purple-500/15 text-purple-400 border border-purple-500/30' },
+  monthly: { label: '月报', class: 'bg-purple-100 text-purple-800' },
   vuln_alert: { label: '漏洞告警', class: 'tag-danger' },
   threat_brief: { label: '威胁简报', class: 'tag-warning' },
-  custom: { label: '自定义', class: 'tag-default' },
+  custom: { label: '决策简报', class: 'tag-default' },
+}
+
+const statusConfig: Record<string, { label: string; class: string }> = {
+  pending: { label: '待生成', class: 'tag-default' },
+  generating: { label: '生成中', class: 'tag-warning' },
+  completed: { label: '已完成', class: 'tag-success' },
+  failed: { label: '失败', class: 'tag-danger' },
 }
 
 export default function Reports() {
@@ -32,6 +39,23 @@ export default function Reports() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; openUp: boolean }>({ top: 0, left: 0, openUp: false })
+
+  const toggleDropdown = useCallback((id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (activeDropdown === id) {
+      setActiveDropdown(null)
+      return
+    }
+    const rect = e.currentTarget.getBoundingClientRect()
+    const menuHeight = 200
+    const openUp = rect.bottom + menuHeight > window.innerHeight
+    setDropdownPos({
+      top: openUp ? rect.top : rect.bottom + 4,
+      left: rect.right - 180,
+      openUp,
+    })
+    setActiveDropdown(id)
+  }, [activeDropdown])
 
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +66,7 @@ export default function Reports() {
   const fetchReports = async () => {
     try {
       setLoading(true)
-      const res = await reportService.list(page, pageSize)
+      const res = await reportService.list(page, pageSize, typeFilter)
       setReports(res.list || [])
       setTotal(res.total || 0)
     } catch (error) {
@@ -55,7 +79,19 @@ export default function Reports() {
 
   useEffect(() => {
     fetchReports()
-  }, [page])
+  }, [page, typeFilter])
+
+  // 当列表中存在 generating 状态的报告时，每 5s 自动刷新
+  useEffect(() => {
+    const hasGenerating = reports.some(r => r.status === 'generating')
+    if (!hasGenerating) return
+
+    const interval = setInterval(() => {
+      fetchReports()
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [reports])
 
   const handleDelete = async (id: number) => {
     if (!confirm('确定要删除这个报告吗？')) return
@@ -87,10 +123,17 @@ export default function Reports() {
     setActiveDropdown(null)
   }
 
+  const handleViewReport = async (report: Report) => {
+    try {
+      const fullReport = await reportService.get(report.id)
+      setSelectedReport(fullReport)
+    } catch (error) {
+      toast.error('获取报告详情失败')
+    }
+  }
+
   const filteredReports = reports.filter((report) => {
-    const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = typeFilter === 'all' || report.type === typeFilter
-    return matchesSearch && matchesType
+    return report.title.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
   const totalPages = Math.ceil(total / pageSize)
@@ -139,7 +182,7 @@ export default function Reports() {
             <option value="monthly">月报</option>
             <option value="vuln_alert">漏洞告警</option>
             <option value="threat_brief">威胁简报</option>
-            <option value="custom">自定义</option>
+            <option value="custom">决策简报</option>
           </select>
 
           {/* Refresh Button */}
@@ -167,6 +210,7 @@ export default function Reports() {
                 <tr>
                   <th>报告标题</th>
                   <th className="w-24">类型</th>
+                  <th className="w-20">状态</th>
                   <th className="w-20">事件数</th>
                   <th className="w-32">创建时间</th>
                   <th className="w-24">操作</th>
@@ -175,13 +219,14 @@ export default function Reports() {
               <tbody>
                 {filteredReports.map((report) => {
                   const typeConfig = reportTypeConfig[report.type] || reportTypeConfig.custom
+                  const stConfig = statusConfig[report.status] || statusConfig.pending
                   return (
                     <tr
                       key={report.id}
                       className="cursor-pointer"
-                      onClick={() => setSelectedReport(report)}
+                      onClick={() => handleViewReport(report)}
                     >
-                      <td>
+                      <td className="max-w-[300px]">
                         <div className="min-w-0">
                           <p className="font-medium text-slate-900 truncate">{report.title}</p>
                           <p className="text-xs text-slate-500 truncate mt-0.5">{report.summary || '-'}</p>
@@ -190,6 +235,12 @@ export default function Reports() {
                       <td>
                         <span className={cn('tag', typeConfig.class)}>{typeConfig.label}</span>
                       </td>
+                      <td>
+                        <span className={cn('tag', stConfig.class)}>
+                          {report.status === 'generating' && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                          {stConfig.label}
+                        </span>
+                      </td>
                       <td className="text-slate-700">{report.event_count}</td>
                       <td className="text-slate-600 text-sm">
                         {formatDate(report.created_at, 'YYYY-MM-DD')}
@@ -197,7 +248,7 @@ export default function Reports() {
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => setSelectedReport(report)}
+                            onClick={() => handleViewReport(report)}
                             className="p-1.5 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                             title="查看"
                           >
@@ -210,53 +261,12 @@ export default function Reports() {
                           >
                             <Download className="w-4 h-4" />
                           </button>
-                          <div className="relative">
-                            <button
-                              onClick={() => setActiveDropdown(activeDropdown === report.id ? null : report.id)}
-                              className="p-1.5 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                            {activeDropdown === report.id && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-40"
-                                  onClick={() => setActiveDropdown(null)}
-                                />
-                                <div className="dropdown right-0 top-full mt-1 z-50">
-                                  <button
-                                    className="dropdown-item w-full"
-                                    onClick={() => handleExport(report.id, 'markdown')}
-                                  >
-                                    <Download className="w-4 h-4" />
-                                    导出 Markdown
-                                  </button>
-                                  <button
-                                    className="dropdown-item w-full"
-                                    onClick={() => handleExport(report.id, 'html')}
-                                  >
-                                    <Download className="w-4 h-4" />
-                                    导出 HTML
-                                  </button>
-                                  <button
-                                    className="dropdown-item w-full"
-                                    onClick={() => handleExport(report.id, 'json')}
-                                  >
-                                    <Download className="w-4 h-4" />
-                                    导出 JSON
-                                  </button>
-                                  <div className="dropdown-divider" />
-                                  <button
-                                    className="dropdown-item w-full text-danger-500"
-                                    onClick={() => handleDelete(report.id)}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    删除
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          <button
+                            onClick={(e) => toggleDropdown(report.id, e)}
+                            className="p-1.5 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -307,6 +317,52 @@ export default function Reports() {
           </div>
         )}
       </div>
+
+      {/* Dropdown Portal - fixed position to avoid overflow clipping */}
+      {activeDropdown !== null && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setActiveDropdown(null)} />
+          <div
+            className="fixed z-50 min-w-[180px] py-2 bg-white rounded-xl border border-slate-200"
+            style={{
+              top: dropdownPos.openUp ? undefined : dropdownPos.top,
+              bottom: dropdownPos.openUp ? window.innerHeight - dropdownPos.top : undefined,
+              left: dropdownPos.left,
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+            }}
+          >
+            <button
+              className="dropdown-item w-full"
+              onClick={() => handleExport(activeDropdown, 'markdown')}
+            >
+              <Download className="w-4 h-4" />
+              导出 Markdown
+            </button>
+            <button
+              className="dropdown-item w-full"
+              onClick={() => handleExport(activeDropdown, 'html')}
+            >
+              <Download className="w-4 h-4" />
+              导出 HTML
+            </button>
+            <button
+              className="dropdown-item w-full"
+              onClick={() => handleExport(activeDropdown, 'json')}
+            >
+              <Download className="w-4 h-4" />
+              导出 JSON
+            </button>
+            <div className="dropdown-divider" />
+            <button
+              className="dropdown-item w-full text-red-600"
+              onClick={() => handleDelete(activeDropdown)}
+            >
+              <Trash2 className="w-4 h-4" />
+              删除
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Report Detail Modal */}
       <ReportDetailModal

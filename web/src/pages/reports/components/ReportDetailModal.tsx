@@ -11,13 +11,16 @@ interface ReportDetailModalProps {
     summary?: string
     content: string
     event_count: number
+    critical_count?: number
+    high_count?: number
+    status?: string
     created_at: string
   } | null
   onClose: () => void
 }
 
 const reportTypeLabels: Record<string, string> = {
-  executive: '决策简报',
+  custom: '决策简报',
   daily: '日报',
   weekly: '周报',
   monthly: '月报',
@@ -95,8 +98,8 @@ ${report.content.replace(/\n/g, '<br>')}
         {/* Header */}
         <div className="modal-header">
           <div className="flex-1 pr-4">
-            <h2 className="text-lg font-medium text-gray-100">{report.title}</h2>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+            <h2 className="text-lg font-medium text-slate-900">{report.title}</h2>
+            <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
                 {formatDate(report.created_at)}
@@ -105,11 +108,17 @@ ${report.content.replace(/\n/g, '<br>')}
                 <FileText className="w-3.5 h-3.5" />
                 {report.event_count} 个事件
               </span>
+              {(report.critical_count ?? 0) > 0 && (
+                <span className="text-red-600 font-medium">{report.critical_count} 严重</span>
+              )}
+              {(report.high_count ?? 0) > 0 && (
+                <span className="text-orange-600 font-medium">{report.high_count} 高危</span>
+              )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,12 +128,12 @@ ${report.content.replace(/\n/g, '<br>')}
         <div className="modal-body flex-1 overflow-y-auto">
           {/* 一句话风险概括 */}
           {report.summary && (
-            <div className="mb-4 p-3 rounded-lg bg-amber-900/30 border border-amber-700 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-amber-200 font-medium">{report.summary}</p>
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-amber-800 font-medium">{report.summary}</p>
             </div>
           )}
-          <div className="prose prose-invert prose-sm max-w-none">
+          <div className="prose prose-sm max-w-none">
             <ReactMarkdown>{report.content}</ReactMarkdown>
           </div>
         </div>

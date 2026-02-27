@@ -29,13 +29,20 @@ type GetReq struct {
 
 // GetRes 获取报告响应
 type GetRes struct {
-	ID        uint   `json:"id"`
-	Title     string `json:"title"`
-	Type      string `json:"type"`
-	Status    string `json:"status"`
-	Content   string `json:"content"`
-	Summary   string `json:"summary"`
-	CreatedAt string `json:"created_at"`
+	ID            uint   `json:"id"`
+	Title         string `json:"title"`
+	Type          string `json:"type"`
+	Status        string `json:"status"`
+	Content       string `json:"content"`
+	Summary       string `json:"summary"`
+	EventCount    int    `json:"event_count"`
+	CriticalCount int    `json:"critical_count"`
+	HighCount     int    `json:"high_count"`
+	StartTime     string `json:"start_time"`
+	EndTime       string `json:"end_time"`
+	GeneratedBy   string `json:"generated_by"`
+	ErrorMsg      string `json:"error_msg"`
+	CreatedAt     string `json:"created_at"`
 }
 
 // ListReq 获取报告列表请求
@@ -54,11 +61,17 @@ type ListRes struct {
 
 // ReportItem 报告列表项
 type ReportItem struct {
-	ID        uint   `json:"id"`
-	Title     string `json:"title"`
-	Type      string `json:"type"`
-	Status    string `json:"status"`
-	CreatedAt string `json:"created_at"`
+	ID            uint   `json:"id"`
+	Title         string `json:"title"`
+	Type          string `json:"type"`
+	Status        string `json:"status"`
+	Summary       string `json:"summary"`
+	EventCount    int    `json:"event_count"`
+	CriticalCount int    `json:"critical_count"`
+	HighCount     int    `json:"high_count"`
+	GeneratedBy   string `json:"generated_by"`
+	ErrorMsg      string `json:"error_msg"`
+	CreatedAt     string `json:"created_at"`
 }
 
 // DeleteReq 删除报告请求

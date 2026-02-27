@@ -7,6 +7,8 @@ import StatsBar from './components/StatsBar'
 import StartButton from './components/StartButton'
 import ResultPanel from './components/ResultPanel'
 import ReportModal from './components/ReportModal'
+import AnalysisModeSelect, { type AnalysisMode } from './components/AnalysisModeSelect'
+import EventPickerModal from './components/EventPickerModal'
 import { cn } from '@/utils'
 
 interface RiskData {
@@ -41,6 +43,9 @@ export default function EventAnalysis() {
   const [riskData, setRiskData] = useState<RiskData | null>(null)
   const [showReport, setShowReport] = useState(false)
   const [showConclusion, setShowConclusion] = useState(false)
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('latest')
+  const [selectedEventIds, setSelectedEventIds] = useState<number[]>([])
+  const [showEventPicker, setShowEventPicker] = useState(false)
 
   const getStepStatus = (agent: string) => {
     const logs = agentLogs.filter(l => l.agent === agent)
@@ -49,13 +54,32 @@ export default function EventAnalysis() {
     return 'pending'
   }
 
+  const handleModeChange = (mode: AnalysisMode) => {
+    setAnalysisMode(mode)
+    if (mode === 'specific') {
+      setShowEventPicker(true)
+    }
+  }
+
   const startAnalysis = async () => {
+    if (analysisMode === 'specific' && selectedEventIds.length === 0) {
+      setShowEventPicker(true)
+      return
+    }
     clearLogs()
     setProcessing(true)
     setRiskData(null)
     setShowConclusion(false)
     try {
-      const response = await fetch('/api/event/pipeline/stream', { method: 'POST' })
+      const body: Record<string, unknown> = { mode: analysisMode }
+      if (analysisMode === 'specific') {
+        body.event_ids = selectedEventIds
+      }
+      const response = await fetch('/api/event/pipeline/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
       while (reader) {
@@ -109,6 +133,12 @@ export default function EventAnalysis() {
               生成报告
             </button>
           )}
+          <AnalysisModeSelect
+            value={analysisMode}
+            onChange={handleModeChange}
+            disabled={isProcessing}
+            selectedCount={analysisMode === 'specific' ? selectedEventIds.length : undefined}
+          />
           <StartButton isProcessing={isProcessing} onStart={startAnalysis} hasData={!!riskData} />
         </div>
       </div>
@@ -241,6 +271,14 @@ export default function EventAnalysis() {
         onClose={() => setShowReport(false)}
         data={riskData}
         logs={agentLogs}
+      />
+
+      {/* 事件选择弹窗 */}
+      <EventPickerModal
+        visible={showEventPicker}
+        onClose={() => setShowEventPicker(false)}
+        onConfirm={(ids) => setSelectedEventIds(ids)}
+        selectedIds={selectedEventIds}
       />
     </div>
   )

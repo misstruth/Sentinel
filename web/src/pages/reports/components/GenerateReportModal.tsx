@@ -10,7 +10,7 @@ interface GenerateReportModalProps {
 }
 
 const reportTypes = [
-  { value: 'executive', label: '决策简报', description: '一页纸管理层汇报，含一句话风险概括' },
+  { value: 'custom', label: '决策简报', description: '一页纸管理层汇报，含一句话风险概括' },
   { value: 'daily', label: '日报', description: '今日安全事件汇总' },
   { value: 'weekly', label: '周报', description: '本周安全态势分析' },
   { value: 'monthly', label: '月报', description: '本月安全趋势报告' },
@@ -41,7 +41,7 @@ function getTimeRange(type: string): { start: string; end: string } {
       start = defaultStart.toISOString().split('T')[0]
   }
 
-  return { start, end }
+  return { start: start + ' 00:00:00', end: end + ' 23:59:59' }
 }
 
 export default function GenerateReportModal({ isOpen, onClose, onSuccess }: GenerateReportModalProps) {

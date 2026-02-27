@@ -99,9 +99,14 @@ func (g *ReportGenerator) generateContent(req *ReportRequest, events []model.Sec
 
 	// 准备模板数据
 	data := map[string]interface{}{
-		"EventData": g.formatEvents(events),
-		"StartTime": req.StartTime.Format("2006-01-02 15:04"),
-		"EndTime":   req.EndTime.Format("2006-01-02 15:04"),
+		"EventData":     g.formatEvents(events),
+		"StartTime":     req.StartTime.Format("2006-01-02 15:04"),
+		"EndTime":       req.EndTime.Format("2006-01-02 15:04"),
+		"TotalCount":    len(events),
+		"CriticalCount": g.countBySeverity(events, model.SeverityCritical),
+		"HighCount":     g.countBySeverity(events, model.SeverityHigh),
+		"MediumCount":   g.countBySeverity(events, model.SeverityMedium),
+		"LowCount":      g.countBySeverity(events, model.SeverityLow),
 	}
 
 	// 渲染提示词
@@ -148,8 +153,16 @@ func (g *ReportGenerator) getPromptTemplate(reportType model.ReportType) string 
 		return DailyReportPrompt
 	case model.ReportTypeWeekly:
 		return WeeklyReportPrompt
+	case model.ReportTypeMonthly:
+		return MonthlyReportPrompt
+	case model.ReportTypeVulnAlert:
+		return VulnAlertPrompt
+	case model.ReportTypeThreatBrief:
+		return ThreatBriefPrompt
+	case model.ReportTypeCustom:
+		return CustomReportPrompt
 	default:
-		return DailyReportPrompt
+		return CustomReportPrompt
 	}
 }
 
@@ -174,20 +187,54 @@ func (g *ReportGenerator) formatEvents(events []model.SecurityEvent) string {
 	for i, e := range events {
 		buf.WriteString(fmt.Sprintf("%d. [%s] %s\n", i+1, e.Severity, e.Title))
 		buf.WriteString(fmt.Sprintf("   时间: %s\n", e.EventTime.Format("2006-01-02 15:04")))
+		if e.CVEID != "" {
+			buf.WriteString(fmt.Sprintf("   CVE: %s\n", e.CVEID))
+		}
+		if e.CVSSScore > 0 {
+			buf.WriteString(fmt.Sprintf("   CVSS: %.1f\n", e.CVSSScore))
+		}
+		if e.AffectedVendor != "" {
+			buf.WriteString(fmt.Sprintf("   厂商: %s\n", e.AffectedVendor))
+		}
+		if e.AffectedProduct != "" {
+			buf.WriteString(fmt.Sprintf("   产品: %s\n", e.AffectedProduct))
+		}
+		if e.RiskScore > 0 {
+			buf.WriteString(fmt.Sprintf("   风险评分: %d/100\n", e.RiskScore))
+		}
+		if e.Tags != "" {
+			buf.WriteString(fmt.Sprintf("   标签: %s\n", e.Tags))
+		}
 		if e.Description != "" {
 			buf.WriteString(fmt.Sprintf("   描述: %s\n", e.Description))
+		}
+		if e.Recommendation != "" {
+			buf.WriteString(fmt.Sprintf("   建议: %s\n", e.Recommendation))
+		}
+		if e.Source != "" {
+			buf.WriteString(fmt.Sprintf("   来源: %s\n", e.Source))
 		}
 		buf.WriteString("\n")
 	}
 	return buf.String()
 }
 
-// extractSummary 提取摘要
+// extractSummary 使用LLM提取一句话风险概括
 func (g *ReportGenerator) extractSummary(content string) string {
-	if len(content) > 500 {
-		return content[:500] + "..."
+	prompt := fmt.Sprintf("请用一句话（不超过100字）概括以下安全报告的核心风险，直接输出概括内容，不要有前缀：\n\n%s", content)
+
+	summary, err := g.callLLM(prompt)
+	if err != nil {
+		// fallback: 截断
+		if len(content) > 200 {
+			return content[:200] + "..."
+		}
+		return content
 	}
-	return content
+	if len(summary) > 200 {
+		summary = summary[:200]
+	}
+	return summary
 }
 
 // countBySeverity 按严重程度统计事件数

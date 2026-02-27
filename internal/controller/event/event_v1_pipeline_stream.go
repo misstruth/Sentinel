@@ -35,6 +35,18 @@ func (c *Controller) PipelineStream(r *ghttp.Request) {
 	r.Response.Header().Set("Cache-Control", "no-cache")
 	r.Response.Header().Set("Connection", "keep-alive")
 
+	// 解析请求参数
+	var req struct {
+		Mode     string `json:"mode"`
+		EventIDs []int  `json:"event_ids"`
+	}
+	_ = r.Parse(&req)
+	mode := req.Mode
+	if mode == "" {
+		mode = "latest"
+	}
+	eventIDs := req.EventIDs
+
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
 
@@ -46,11 +58,26 @@ func (c *Controller) PipelineStream(r *ghttp.Request) {
 	}
 
 	// ========== Step 1: 数据采集 ==========
-	send(AgentStreamEvent{Type: "agent_start", Agent: "数据采集Agent", Status: "running", Message: "扫描待处理事件..."})
+	modeLabel := map[string]string{"today": "今日事件", "latest": "最近10条", "specific": "指定事件"}[mode]
+	if modeLabel == "" {
+		modeLabel = "最近10条"
+	}
+	send(AgentStreamEvent{Type: "agent_start", Agent: "数据采集Agent", Status: "running", Message: fmt.Sprintf("扫描%s...", modeLabel)})
 
 	db := database.GetDB()
 	var events []model.SecurityEvent
-	db.Where("status = ?", "new").Limit(10).Find(&events)
+	switch mode {
+	case "today":
+		now := time.Now()
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		db.Where("event_time >= ?", startOfDay).Order("event_time DESC").Find(&events)
+	case "specific":
+		if len(eventIDs) > 0 {
+			db.Where("id IN ?", eventIDs).Find(&events)
+		}
+	default: // latest
+		db.Order("event_time DESC").Limit(10).Find(&events)
+	}
 
 	send(AgentStreamEvent{
 		Type: "agent_complete", Agent: "数据采集Agent", Status: "success",
