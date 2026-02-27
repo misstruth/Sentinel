@@ -1,0 +1,17 @@
+# 开发环境配置
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+
+logger:
+  level: "all"
+  stdout: true
+
+# 数据库配置
+database:
+  host: "localhost"
+  port: "3306"
+  user: "root"
+  pass: ""
+  name: "fo_sentinel_dev"

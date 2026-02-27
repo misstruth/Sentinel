@@ -1,0 +1,15 @@
+# 生产环境配置
+server:
+  address: ":8000"
+
+logger:
+  level: "warn"
+  stdout: false
+
+# 数据库配置
+database:
+  host: "${DB_HOST}"
+  port: "${DB_PORT}"
+  user: "${DB_USER}"
+  pass: "${DB_PASS}"
+  name: "fo_sentinel"

@@ -1,0 +1,201 @@
+# Fo-Sentinel-Agent 安全数据源配置
+# 支持的数据源类型: vulnerability, threat_intel, vendor_advisory, attack_activity, github_repo, rss, nvd, cve
+
+# ============================================
+# 一、漏洞情报数据源
+# ============================================
+
+vulnerability_sources:
+  # NVD - 美国国家漏洞数据库
+  - name: "NVD 漏洞数据库"
+    type: "nvd"
+    enabled: true
+    url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
+    api_key: ""  # 可选，有API Key可提高请求频率
+    cron: "0 */4 * * *"  # 每4小时同步一次
+    description: "NIST国家漏洞数据库，提供CVE详细信息和CVSS评分"
+
+  # CISA KEV - 已知被利用漏洞目录
+  - name: "CISA KEV 已知利用漏洞"
+    type: "vulnerability"
+    enabled: true
+    url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    cron: "0 */6 * * *"  # 每6小时同步一次
+    description: "CISA已知被积极利用的漏洞目录，高优先级修复"
+
+  # CVE.org 官方数据源
+  - name: "CVE.org 官方漏洞库"
+    type: "cve"
+    enabled: true
+    url: "https://cveawg.mitre.org/api/cve"
+    cron: "0 */4 * * *"
+    description: "CVE官方漏洞数据库"
+
+  # CVEfeed.io RSS
+  - name: "CVEfeed 高危漏洞订阅"
+    type: "rss"
+    enabled: true
+    url: "https://cvefeed.io/rssfeed/severity/high.xml"
+    cron: "0 */2 * * *"
+    description: "高危和严重漏洞RSS订阅"
+
+# ============================================
+# 二、威胁情报数据源
+# ============================================
+
+threat_intel_sources:
+  # AlienVault OTX
+  - name: "AlienVault OTX 威胁情报"
+    type: "threat_intel"
+    enabled: true
+    url: "https://otx.alienvault.com/api/v1/pulses/subscribed"
+    api_key: ""  # 需要注册获取
+    cron: "0 */3 * * *"
+    description: "开放威胁情报交换平台，提供IoC指标"
+
+  # MISP 威胁情报平台
+  - name: "MISP 威胁情报共享"
+    type: "threat_intel"
+    enabled: false
+    url: "https://your-misp-instance/events/restSearch"
+    api_key: ""
+    cron: "0 */4 * * *"
+    description: "恶意软件信息共享平台，需自建或接入实例"
+
+# ============================================
+# 三、厂商安全公告数据源
+# ============================================
+
+vendor_advisory_sources:
+  # Microsoft 安全更新
+  - name: "Microsoft 安全更新指南"
+    type: "vendor_advisory"
+    enabled: true
+    url: "https://api.msrc.microsoft.com/cvrf/v2.0/updates"
+    cron: "0 8 * * *"
+    description: "微软安全响应中心安全更新"
+
+  # Adobe 安全公告
+  - name: "Adobe 安全公告"
+    type: "rss"
+    enabled: true
+    url: "https://helpx.adobe.com/security/rss/security-bulletins.xml"
+    cron: "0 9 * * *"
+    description: "Adobe产品安全公告"
+
+  # Oracle 关键补丁更新
+  - name: "Oracle 关键补丁更新"
+    type: "rss"
+    enabled: true
+    url: "https://www.oracle.com/security-alerts/cpujan2026.html"
+    cron: "0 10 * * *"
+    description: "Oracle季度关键补丁更新"
+
+# ============================================
+# 四、GitHub 安全公告
+# ============================================
+
+github_sources:
+  # GitHub Advisory Database
+  - name: "GitHub 安全公告数据库"
+    type: "github_repo"
+    enabled: true
+    url: "https://api.github.com/advisories"
+    api_key: ""  # GitHub Token
+    cron: "0 */4 * * *"
+    description: "GitHub全球安全公告数据库"
+
+# ============================================
+# 五、攻击活动追踪数据源
+# ============================================
+
+attack_activity_sources:
+  # MITRE ATT&CK
+  - name: "MITRE ATT&CK 框架"
+    type: "attack_activity"
+    enabled: true
+    url: "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
+    cron: "0 0 * * 1"
+    description: "MITRE ATT&CK企业攻击技术框架"
+
+# ============================================
+# 六、安全新闻与博客RSS
+# ============================================
+
+security_news_sources:
+  # The Hacker News
+  - name: "The Hacker News"
+    type: "rss"
+    enabled: true
+    url: "https://feeds.feedburner.com/TheHackersNews"
+    cron: "0 */2 * * *"
+    description: "知名安全新闻网站"
+
+  # BleepingComputer
+  - name: "BleepingComputer 安全新闻"
+    type: "rss"
+    enabled: true
+    url: "https://www.bleepingcomputer.com/feed/"
+    cron: "0 */2 * * *"
+    description: "安全新闻和技术支持网站"
+
+  # Krebs on Security
+  - name: "Krebs on Security"
+    type: "rss"
+    enabled: true
+    url: "https://krebsonsecurity.com/feed/"
+    cron: "0 */3 * * *"
+    description: "知名安全研究员Brian Krebs的博客"
+
+  # SecurityWeek
+  - name: "SecurityWeek"
+    type: "rss"
+    enabled: true
+    url: "https://www.securityweek.com/feed/"
+    cron: "0 */3 * * *"
+    description: "企业安全新闻"
+
+# ============================================
+# 七、国内安全数据源
+# ============================================
+
+china_sources:
+  # CNVD 国家信息安全漏洞共享平台
+  - name: "CNVD 漏洞库"
+    type: "vulnerability"
+    enabled: true
+    url: "https://www.cnvd.org.cn"
+    cron: "0 */6 * * *"
+    description: "国家信息安全漏洞共享平台"
+
+  # CNNVD 国家信息安全漏洞库
+  - name: "CNNVD 漏洞库"
+    type: "vulnerability"
+    enabled: true
+    url: "https://www.cnnvd.org.cn"
+    cron: "0 */6 * * *"
+    description: "国家信息安全漏洞库"
+
+  # 安全客
+  - name: "安全客"
+    type: "rss"
+    enabled: true
+    url: "https://api.anquanke.com/data/v1/rss"
+    cron: "0 */2 * * *"
+    description: "国内安全资讯平台"
+
+  # FreeBuf
+  - name: "FreeBuf"
+    type: "rss"
+    enabled: true
+    url: "https://www.freebuf.com/feed"
+    cron: "0 */2 * * *"
+    description: "国内安全媒体"
+
+# ============================================
+# 配置说明
+# ============================================
+# 1. enabled: true/false 控制是否启用该数据源
+# 2. api_key: 部分数据源需要API密钥，请自行申请
+# 3. cron: 使用标准Cron表达式配置同步频率
+# 4. 建议根据实际需求启用相关数据源
