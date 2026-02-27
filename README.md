@@ -1,4 +1,4 @@
-# SuperBizAgent — 多Agent安全事件智能研判平台
+# Sentinel — 多Agent安全事件智能研判平台
 
 基于多Agent协作架构的企业安全事件分析平台，结合大语言模型（DeepSeek V3）、向量数据库（Milvus）和 RAG 检索增强生成技术，实现安全事件的自动采集、智能提取、语义去重、AI风险评估和解决方案生成。
 
