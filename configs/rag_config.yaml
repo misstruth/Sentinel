@@ -1,0 +1,36 @@
+# RAG 系统配置示例
+
+# 混合检索配置
+hybrid_search:
+  enabled: true
+  dense_weight: 0.7
+  sparse_weight: 0.3
+  top_k: 20
+
+# Query 改写配置
+query_rewrite:
+  enabled: true
+  num_rewrites: 3
+  use_hyde: false
+
+# 重排序配置
+rerank:
+  enabled: true
+  coarse_top_k: 30
+  fine_top_k: 10
+  final_top_k: 3
+  score_threshold: 0.6
+  rerank_url: "http://localhost:8001/rerank"
+  timeout: 3000
+
+# 缓存配置
+cache:
+  enabled: true
+  ttl: 3600  # 1小时
+  redis_addr: "localhost:6379"
+  max_size: 10000
+
+# 降级配置
+fallback:
+  enabled: true
+  timeout: 5000  # 5秒

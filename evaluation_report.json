@@ -1,0 +1,12 @@
+{
+  "metrics": {
+    "recall_at_3": 0,
+    "recall_at_5": 0,
+    "recall_at_10": 0,
+    "precision_at_3": 0,
+    "mrr": 0,
+    "ndcg": 0
+  },
+  "results": [],
+  "timestamp": "2026-03-09T13:11:40+08:00"
+}

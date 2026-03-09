@@ -37,12 +37,12 @@ var fields = []*entity.Field{
 		Name:     "id",
 		DataType: entity.FieldTypeVarChar,
 		TypeParams: map[string]string{
-			"max_length": "255",
+			"max_length": "256",
 		},
 		PrimaryKey: true,
 	},
 	{
-		Name:     "vector", // 确保字段名匹配
+		Name:     "vector",
 		DataType: entity.FieldTypeBinaryVector,
 		TypeParams: map[string]string{
 			"dim": "65536",

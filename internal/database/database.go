@@ -41,6 +41,11 @@ func Init() error {
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
+	// 首次部署时写入默认订阅源
+	if err := SeedDefaultSubscriptions(); err != nil {
+		return fmt.Errorf("failed to seed default subscriptions: %w", err)
+	}
+
 	return nil
 }
 
