@@ -13,8 +13,15 @@ var fetchManager *fetcher.Manager
 
 func InitFetcher() {
 	fetchManager = fetcher.NewManager()
+	fetchManager.Register(fetcher.NewNVDFetcher(""))
 	fetchManager.Register(fetcher.NewRSSFetcher())
+	fetchManager.Register(fetcher.NewCVEFetcher())
+	fetchManager.Register(fetcher.NewVulnerabilityFetcher())
+	fetchManager.Register(fetcher.NewThreatIntelFetcher())
+	fetchManager.Register(fetcher.NewVendorAdvisoryFetcher())
+	fetchManager.Register(fetcher.NewAttackActivityFetcher())
 	fetchManager.Register(fetcher.NewGitHubFetcher())
+	fetchManager.Register(fetcher.NewWebHookFetcher())
 	go runFetchLoop()
 }
 
